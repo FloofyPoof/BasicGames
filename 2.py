@@ -68,7 +68,7 @@ def main():
             projectile_count = 0
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or keys[pygame.K_f]:
+            if event.type == pygame.QUIT or keys[pygame.K_ESCAPE]:
                 run = False
                 break
 

@@ -27,10 +27,9 @@ while abs(r - math.sinh(A1) / A1) > da:
     A0 = A1
     A1 = A0 - (math.sinh(A0) - r * A0) / (math.cosh(A0) - r)
 
-A = A1
-a = dx / (2 * A)
+a = dx / (2 * A1)
 b = x_mean - a * math.atanh(dy / L) # b is center of the curve
-c = y_mean - L / (2 * math.tanh(A)) # c is vertical offset
+c = y_mean - L / (2 * math.tanh(A1)) # c is vertical offset
 
 def f(x):
     return a * math.cosh((x - b)/ a) + c

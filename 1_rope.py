@@ -64,15 +64,16 @@ def catenary(x1, y1, x2, y2, L, rope_calculation_points):
 
 def main():
     run = True
-    Y_START = random.randint(HEIGHT//10, HEIGHT*8//10)
-    Y_FINISH = random.randint(HEIGHT//10, HEIGHT*8//10)
-    rope_length = 200
+    Y_START = random.randint(HEIGHT//10, HEIGHT*6//10)
+    Y_FINISH = random.randint(HEIGHT//10, HEIGHT*6//10)
+    rope_length = 300
     rope_points = [range(int(rope_calculation_points))]
     mouse_onCork = 0, 0
     mouse_pos_prev = 0, 0
     mouse_moved = False
     on_cork = True
     rope_last_good_pos = [(0, 0), (0, 1)]
+    rope_oob = False
 
     while run:
         keys = pygame.key.get_pressed()
@@ -82,9 +83,9 @@ def main():
                 run = False
                 break
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w:
+                if event.key == pygame.K_w and rope_length < 500:
                     rope_length += 25
-                if event.key == pygame.K_s and rope_length > 25:
+                if event.key == pygame.K_s and rope_length > 200:
                     rope_length -= 25
 
         mouse_pos = pygame.mouse.get_pos()
@@ -105,10 +106,16 @@ def main():
         if mouse_moved and on_cork:
             rope_points = catenary(selected_point[0], selected_point[1], mouse_onCork[0], mouse_onCork[1], rope_length, rope_calculation_points)
         if rope_points:
-            rope_last_good_pos = rope_points
-            if on_cork:
-                rope_last_good_pos.append(mouse_pos)
-        pygame.draw.lines(WIN, pygame.Color(200, 200, 200, 200), 0, rope_last_good_pos, 3)
+            for _, y in rope_points:
+                rope_oob = False
+                if not onCork(WIDTH//2, y):
+                    rope_oob = True
+                    break
+            if not rope_oob:
+                rope_last_good_pos = rope_points
+                if on_cork:
+                    rope_last_good_pos.append(mouse_pos)
+        pygame.draw.lines(WIN, pygame.Color(200, 200, 200, 200), False, rope_last_good_pos, 3)
 
 
         pygame.draw.rect(WIN, pygame.Color(0, 0, 200, 200), rect_cork, 3)

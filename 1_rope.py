@@ -10,7 +10,6 @@ WIDTH, HEIGHT = 800, 600
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Rope test')
 BG = pygame.transform.scale(pygame.image.load('sky.jpg'), (WIDTH, HEIGHT))
-draw_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 rect_cork = pygame.Rect(WIDTH/10, HEIGHT/10, WIDTH*8/10, HEIGHT*8/10) # not here
 rope_calculation_points = 1e2
 
@@ -95,6 +94,7 @@ def main():
 
     while run:
         keys = pygame.key.get_pressed()
+        draw_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 
         mouse1 = False
         mouse2 = False
@@ -132,9 +132,10 @@ def main():
 
         if mouse2 and len(pin_points) > 1:
             pin_points.pop()
-            selected_point = pin_points[-1] #TODO check valid
+            selected_point = pin_points[-1]
             rope_all_ropes.pop()
             rope_calculating = True
+            rope_last_valid_pos = 0, 0
 
         if rope_calculating:
             if mouse_moved and on_cork:
@@ -145,41 +146,48 @@ def main():
                     if not onCork(WIDTH//2, y):
                         rope_oob = True
                         break
-                if not rope_oob and abs(selected_point[0] - mouse_on_cork[0]) > rope_minimal_x:
+                if not rope_oob and abs(selected_point[0] - mouse_on_cork[0]) > rope_minimal_x + 5:
                     rope_last_good_rope_pos = rope_points
                     if on_cork:
                         rope_last_good_rope_pos.append(mouse_pos)
                         rope_last_valid_pos = mouse_pos
-            if mouse1 and rope_last_valid_pos[0]:
-                pin_points.append(rope_last_valid_pos)
-                selected_point = rope_last_valid_pos
-                rope_all_ropes.append(rope_last_good_rope_pos)
-                rope_last_valid_pos = snap_to(rope_last_valid_pos, (WIDTH*9/10, Y_FINISH), rope_minimal_x)
-            if rope_last_valid_pos == (WIDTH*9/10, Y_FINISH):
-                rope_calculating = False
+            if mouse1 and rope_last_valid_pos[0] and rope_last_valid_pos != pin_points[-1]:
+                if WIDTH*9/10 - rope_last_valid_pos[0] < rope_minimal_x:
+                    rope_last_valid_pos = WIDTH*9/10, Y_FINISH
+                    rope_calculating = False
+                    rope_last_good_rope_pos = catenary(pin_points[-1][0], pin_points[-1][1], WIDTH*9/10, Y_FINISH, rope_length, rope_calculation_points)
+                    if rope_last_good_rope_pos == False:
+                        print("they are too far")
+                    else:
+                        rope_last_good_rope_pos.append((WIDTH*9/10, Y_FINISH))
+                        pin_points.append(rope_last_valid_pos)
+                        rope_all_ropes.append(rope_last_good_rope_pos)
+                else:
+                    pin_points.append(rope_last_valid_pos)
+                    rope_all_ropes.append(rope_last_good_rope_pos)
+                if rope_calculating:
+                    selected_point = rope_last_valid_pos
+                else:
+                    rope_last_good_rope_pos = catenary(selected_point[0], selected_point[1], mouse_on_cork[0], mouse_on_cork[1], rope_length, rope_calculation_points)
 
-        pygame.draw.lines(WIN, pygame.Color(155, 155, 155, 200), False, rope_last_good_rope_pos, 3)
+        if rope_calculating and len(rope_last_good_rope_pos) > 0:
+            pygame.draw.lines(draw_surf, pygame.Color(155, 155, 155, 200), False, rope_last_good_rope_pos, 3)
         for rope in rope_all_ropes:
-            pygame.draw.lines(WIN, pygame.Color(200, 200, 200, 200), False, rope, 3)
+            pygame.draw.lines(draw_surf, pygame.Color(200, 200, 200, 200), False, rope, 3)
         if rope_calculating:
-            pygame.draw.line(WIN, pygame.Color(200, 0, 0, 200), (pin_points[-1][0] + rope_minimal_x, HEIGHT/10), (pin_points[-1][0] + rope_minimal_x, HEIGHT*9/10), 3)
-        pygame.draw.rect(WIN, pygame.Color(0, 0, 200, 200), rect_cork, 3)
-        pygame.draw.circle(WIN, pygame.Color(200, 0, 0, 200), (WIDTH/10, Y_START), 5)
-        pygame.draw.circle(WIN, pygame.Color(200, 0, 0, 200), (WIDTH*9/10, Y_FINISH), 5)
-        pygame.draw.circle(WIN, pygame.Color(0, 200, 0, 200), mouse_on_cork, 5)
+            pygame.draw.line(draw_surf, pygame.Color(200, 0, 0, 200), (pin_points[-1][0] + rope_minimal_x, HEIGHT/10), (pin_points[-1][0] + rope_minimal_x, HEIGHT*9/10), 3)
+        pygame.draw.rect(draw_surf, pygame.Color(0, 0, 200, 100), rect_cork, 3)
+        pygame.draw.circle(draw_surf, pygame.Color(200, 0, 0, 200), (WIDTH/10, Y_START), 5)
+        pygame.draw.circle(draw_surf, pygame.Color(100, 0, 0, 200), (WIDTH*9/10, Y_FINISH), 5)
+        pygame.draw.circle(draw_surf, pygame.Color(0, 200, 0, 200), mouse_on_cork, 5)
         if rope_calculating:
-            pygame.draw.circle(WIN, pygame.Color(255, 200, 0, 200), rope_last_valid_pos, 4)
+            pygame.draw.circle(draw_surf, pygame.Color(255, 200, 0, 200), rope_last_valid_pos, 4)
         for point in pin_points:
-            pygame.draw.circle(WIN, pygame.Color(200, 0, 0, 200), point, 5)
-        #WIN.blit(draw_surf, (0,0)) #TODO alpha
+            pygame.draw.circle(draw_surf, pygame.Color(200, 0, 0, 200), point, 5)
+        WIN.blit(draw_surf, (0,0)) #TODO alpha
         pygame.display.update()
 
     pygame.quit()
 
 if __name__ == "__main__":
     main()
-
-#TODO snap last rope correction / indicator
-#TODO rope snap if vertical too far
-#TODO rope can only go right
-#TODO left click fills pin_pont list indefinitely

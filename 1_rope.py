@@ -71,6 +71,15 @@ def snap_to(pos1, pos2, distance):
         return pos2
     return pos1
 
+class Button:
+    win_width = WIN.get_width()
+    win_height = WIN.get_height()
+    rect = pygame.rect(win_width*0.4, win_height*0.4, win_width*0.2, win_height*0.2)
+    pygame.draw.rect(WIN, (128, 128, 128), rect)
+
+    #t_length = FONT.render(f"Rope length: {rope_length}", 1, "white")
+    #WIN.blit(t_length, (10, 10))
+
 def main():
     run = True
     Y_START = random.randint(HEIGHT//10, HEIGHT*6//10)
@@ -184,7 +193,7 @@ def main():
             pygame.draw.circle(draw_surf, pygame.Color(255, 200, 0, 200), rope_last_valid_pos, 4)
         for point in pin_points:
             pygame.draw.circle(draw_surf, pygame.Color(200, 0, 0, 200), point, 5)
-        WIN.blit(draw_surf, (0,0)) #TODO alpha
+        WIN.blit(draw_surf, (0,0))
         pygame.display.update()
 
     pygame.quit()

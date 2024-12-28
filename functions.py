@@ -61,24 +61,29 @@ def snap_to(pos1, pos2, distance):
         return pos2
     return pos1
 
+def draw_transparent_line(surface, color, pos1, pos2, width): #TODO with smaller surface
+    temp_surf = pygame.Surface((surface.get_width(), surface.get_height()), pygame.SRCALPHA)
+    pygame.draw.line(temp_surf, color, pos1, pos2, width)
+    surface.blit(temp_surf, (0,0))
+
 class Button:
     growth = 1.3
-    color_rect = (128, 128, 128)
-    def __init__(self, WIN, FONT, text="base", pos=(0.5, 0.5)):
-        self.WIN = WIN
+    def __init__(self, surface, FONT, text="base", pos=(0.5, 0.5), color_rect=(128, 128, 128)):
+        self.surface = surface
         self.pos_x = pos[0]
         self.pos_y = pos[1]
+        self.color_rect = color_rect
 
         self.t_length = FONT.render(text, 1, (222, 222, 222))
-        self.win_width = WIN.get_width()
-        self.win_height = WIN.get_height()
+        self.win_width = surface.get_width()
+        self.win_height = surface.get_height()
         self.x_size = self.t_length.get_width()
         self.y_size = self.t_length.get_height()
         self.rect = pygame.Rect(self.win_width*self.pos_x - self.x_size*self.growth/2, self.win_height*self.pos_y - self.y_size*self.growth/2, self.x_size * self.growth, self.y_size * self.growth)
 
     def draw(self):
-        pygame.draw.rect(self.WIN, self.color_rect, self.rect)
-        self.WIN.blit(self.t_length, (self.win_width*self.pos_x - self.x_size/2, self.win_height*self.pos_y - self.y_size/2))
+        pygame.draw.rect(self.surface, self.color_rect, self.rect)
+        self.surface.blit(self.t_length, (self.win_width * self.pos_x - self.x_size / 2, self.win_height * self.pos_y - self.y_size / 2))
 
     def on_button(self, mouse_pos):
         output = self.rect.collidepoint(mouse_pos)
@@ -89,7 +94,11 @@ class Button:
     def get_darker(self):
         self.color_rect = [int(color * 0.7) for color in self.color_rect]
 
+class Turret:
+    pass
+
 class GameStage(Enum):
     pregame = 0
     ropes = 1
-    pins = 2
+    post_ropes = 2
+    pins = 3

@@ -1,7 +1,5 @@
-import pygame
 import random
-import math
-import numpy as np
+from functions import *
 
 pygame.font.init()
 FONT = pygame.font.SysFont('comicsans', 30)
@@ -13,77 +11,11 @@ BG = pygame.transform.scale(pygame.image.load('sky.jpg'), (WIDTH, HEIGHT))
 rect_cork = pygame.Rect(WIDTH/10, HEIGHT/10, WIDTH*8/10, HEIGHT*8/10) # not here
 rope_calculation_points = 1e2
 
-def onCork(x, y):
-        left = x > rect_cork.left
-        right = x < rect_cork.left + rect_cork.width
-        top = y > rect_cork.top
-        bottom = y < rect_cork.top + rect_cork.height
-        return left and right and top and bottom
-
-def catenary(x1, y1, x2, y2, L, rope_calculation_points):
-    dx = x2 - x1
-    dy = y2 - y1
-    x_mean = (x1 + x2) / 2
-    y_mean = (y1 + y2) / 2
-
-    if dx == 0:
-        return False
-
-    if dx ** 2 + dy ** 2 >= L ** 2:
-        #print("The string is too short!")
-        return False
-
-    r = math.sqrt(L**2 - dy**2) / dx
-    da = 1e-10
-    if r - 1 < 0:
-        return False
-    A0 = math.sqrt(6 * (r - 1))
-    if r >= 3:
-        A0 = math.log(2 * r) + math.log(math.log(2 * r))
-
-    denominator = math.cosh(A0) - r
-    if denominator:
-        A1 = A0 - (math.sinh(A0) - r * A0) / denominator
-    else:
-        A1 = A0 - (math.sinh(A0) - r * A0) / 1e-4
-
-    while abs(r - math.sinh(A1) / A1) > da:
-        #print(abs(r - math.sinh(A1) / A1))
-        A0 = A1
-        A1 = A0 - (math.sinh(A0) - r * A0) / (math.cosh(A0) - r)
-
-    a = dx / (2 * A1)
-    b = x_mean - a * math.atanh(dy / L) # b is center of the curve
-    c = y_mean - L / (2 * math.tanh(A1)) # c is vertical offset
-
-    xpoints = np.arange(x1, x2, abs(x2 - x1) / rope_calculation_points)
-    #ypoints = [a * math.cosh((x - b)/ a) + c for x in xpoints]
-    ypoints = [y1 + y2 - a * math.cosh((x - x1 - x2 + b)/ a) - c for x in xpoints]
-    return_val = []
-    temp_touple = 0, 0
-    for i in range(xpoints.size):
-        temp_touple = xpoints[i], ypoints[i]
-        return_val.append(temp_touple)
-    return return_val
-
-def snap_to(pos1, pos2, distance):
-    if (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2 < distance**2:
-        return pos2
-    return pos1
-
-class Button:
-    win_width = WIN.get_width()
-    win_height = WIN.get_height()
-    rect = pygame.rect(win_width*0.4, win_height*0.4, win_width*0.2, win_height*0.2)
-    pygame.draw.rect(WIN, (128, 128, 128), rect)
-
-    #t_length = FONT.render(f"Rope length: {rope_length}", 1, "white")
-    #WIN.blit(t_length, (10, 10))
-
 def main():
     run = True
     Y_START = random.randint(HEIGHT//10, HEIGHT*6//10)
     Y_FINISH = random.randint(HEIGHT//10, HEIGHT*6//10)
+    stage = GameStage.ropes
     rope_length = 300
     rope_points = False
     mouse_on_cork = 0, 0
@@ -100,9 +32,11 @@ def main():
     pin_points = [selected_point]
     rope_all_ropes = []
     rope_calculating = True
+    pos_button = 0.5, 0.5
 
     while run:
         keys = pygame.key.get_pressed()
+        keys_mouse = pygame.mouse.get_pressed()
         draw_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 
         mouse1 = False
@@ -116,7 +50,7 @@ def main():
                     rope_length += 25
                 if event.key == pygame.K_s and rope_length > 200:
                     rope_length -= 25
-            elif event.type == pygame.MOUSEBUTTONDOWN: # mouse motion
+            elif event.type == pygame.MOUSEBUTTONDOWN: # TODO mouse motion
                 mouse_buttons = pygame.mouse.get_pressed()
                 if mouse_buttons[0]:
                     mouse1 = True
@@ -131,7 +65,7 @@ def main():
             mouse_moved = False
         mouse_pos_prev = mouse_pos
         on_cork = False
-        if onCork(mouse_pos[0], mouse_pos[1]):
+        if onCork(mouse_pos[0], mouse_pos[1], rect_cork):
             mouse_on_cork = mouse_pos
             on_cork = True
 
@@ -152,7 +86,7 @@ def main():
             if rope_points != False:
                 for (x, y) in rope_points:
                     rope_oob = False
-                    if not onCork(WIDTH//2, y):
+                    if not onCork(WIDTH//2, y, rect_cork):
                         rope_oob = True
                         break
                 if not rope_oob and abs(selected_point[0] - mouse_on_cork[0]) > rope_minimal_x + 5:
@@ -193,7 +127,16 @@ def main():
             pygame.draw.circle(draw_surf, pygame.Color(255, 200, 0, 200), rope_last_valid_pos, 4)
         for point in pin_points:
             pygame.draw.circle(draw_surf, pygame.Color(200, 0, 0, 200), point, 5)
-        WIN.blit(draw_surf, (0,0))
+
+        if not rope_calculating:
+            button_finish_rope = Button(draw_surf, FONT, "Next step", pos_button)
+            if button_finish_rope.on_button(mouse_pos):
+                if keys_mouse[0]:
+                    button_finish_rope.get_darker()
+                    pos_button = mouse_pos[0] / WIDTH, mouse_pos[1] / HEIGHT
+            button_finish_rope.draw()
+
+        WIN.blit(draw_surf, (0,0)) #TODO implement stage counter instead of rope_calculating
         pygame.display.update()
 
     pygame.quit()

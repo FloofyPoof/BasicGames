@@ -50,10 +50,9 @@ def catenary(x1, y1, x2, y2, L, rope_calculation_points):
     #ypoints = [a * math.cosh((x - b)/ a) + c for x in xpoints]
     ypoints = [y1 + y2 - a * math.cosh((x - x1 - x2 + b)/ a) - c for x in xpoints]
     return_val = []
-    temp_touple = 0, 0
     for i in range(xpoints.size):
-        temp_touple = xpoints[i], ypoints[i]
-        return_val.append(temp_touple)
+        temp_tuple = float(xpoints[i]), float(ypoints[i])
+        return_val.append(temp_tuple)
     return return_val
 
 def snap_to(pos1, pos2, distance):
@@ -65,6 +64,21 @@ def draw_transparent_line(surface, color, pos1, pos2, width): #TODO with smaller
     temp_surf = pygame.Surface((surface.get_width(), surface.get_height()), pygame.SRCALPHA)
     pygame.draw.line(temp_surf, color, pos1, pos2, width)
     surface.blit(temp_surf, (0,0))
+
+def draw_transparent_rect(surface, color, rect, width=0): #TODO with smaller surface
+    temp_surf = pygame.Surface((surface.get_width(), surface.get_height()), pygame.SRCALPHA)
+    pygame.draw.rect(temp_surf, color, rect, width)
+    surface.blit(temp_surf, (0,0))
+
+def distance_2d(pos1, pos2):
+    return math.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2)
+
+def point_in_range_of_list(point, items2, distance):
+    for items in items2:
+        for item in items:
+            if distance_2d(point, item) < distance:
+                return True
+    return False
 
 class Button:
     growth = 1.3
